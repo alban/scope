@@ -66,3 +66,12 @@ deployment:
     commands:
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push weaveworks/scope
+  privatehub:
+    branch: /.*master/
+    commands:
+      - >
+        test "$DEPLOY_PRIVATE_HUB_BRANCH" == "" || test "$CIRCLE_BRANCH" != "$DEPLOY_PRIVATE_HUB_BRANCH" || (
+          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS &&
+          docker tag weaveworks/scope:latest $DOCKER_USER/scope:latest &&
+          docker push $DOCKER_USER/scope
+        )
