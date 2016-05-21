@@ -65,7 +65,7 @@ deployment:
     commands:
       - >
         test -z "${DOCKER_USER}" || (
-          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS &&
+          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS $DOCKER_SERVER &&
           (test "${DOCKER_ORGANIZATION:-$DOCKER_USER}" == "weaveworks" || docker tag weaveworks/scope:latest ${DOCKER_ORGANIZATION:-$DOCKER_USER}/scope:latest) &&
           docker push ${DOCKER_ORGANIZATION:-$DOCKER_USER}/scope
         )
@@ -74,7 +74,7 @@ deployment:
     commands:
       - >
         test -z "DEPLOY_BRANCH" || test -z "${DOCKER_USER}" || (
-          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS &&
+          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS $DOCKER_SERVER &&
           docker tag weaveworks/scope:latest ${DOCKER_ORGANIZATION:-$DOCKER_USER}/scope:${CIRCLE_BRANCH//\//-} &&
           (test "${DOCKER_ORGANIZATION:-$DOCKER_USER}" == "weaveworks" || docker tag weaveworks/scope:latest ${DOCKER_ORGANIZATION:-$DOCKER_USER}/scope:${CIRCLE_BRANCH//\//-}) &&
           docker push ${DOCKER_ORGANIZATION:-$DOCKER_USER}/scope:${CIRCLE_BRANCH//\//-}
