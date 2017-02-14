@@ -35,6 +35,16 @@ dependencies:
 
 test:
   override:
+    # Copying bits from tools/circle.yml here. See https://github.com/weaveworks/build-tools/pull/44/files
+    - sudo chmod a+wr --recursive /usr/local/go/pkg:
+        parallel: true
+    - go clean -i net:
+        parallel: true
+    - go install -tags netgo std:
+        parallel: true
+    - cd $SRCDIR; go get github.com/fzipp/gocyclo github.com/golang/lint/golint github.com/kisielk/errcheck github.com/fatih/hclfmt gopkg.in/mvdan/sh.v1/cmd/shfmt:
+        parallel: true
+
     - cd $SRCDIR; make RM= lint:
         parallel: true
     - cd $SRCDIR; COVERDIR=./coverage make RM= tests:
