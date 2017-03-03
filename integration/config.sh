@@ -31,7 +31,12 @@ weave_on() {
 scope_end_suite() {
     end_suite
     for host in $HOSTS; do
-        docker_on "$host" rm -f "$(docker_on "$host" ps -a -q)" 2>/dev/null 1>&2 || true
+        echo "List of docker containers on $host:"
+        docker_on "$host" ps -a
+        echo "Ok, killing all docker containers on $host:"
+        docker_on "$host" rm -f "$(docker_on "$host" ps -a -q)"
+        echo "Killed. Is there still some?"
+        docker_on "$host" ps -a
     done
 }
 
