@@ -34,8 +34,12 @@ scope_end_suite() {
         echo "List of docker containers on $host:"
         docker_on "$host" ps -a
         echo "Ok, killing all docker containers on $host:"
-        docker_on "$host" rm -f "$(docker_on "$host" ps -a -q)"
+        docker_on "$host" rm -f "$(docker_on "$host" ps -a -q)" || true
         echo "Killed. Is there still some?"
+        docker_on "$host" ps -a
+        # The CircleCI's Docker client is unable to delete containers on GCE's Docker server
+        run_on "$host" "sudo service docker restart"
+        echo "List of containers after a Docker restart"
         docker_on "$host" ps -a
     done
 }
