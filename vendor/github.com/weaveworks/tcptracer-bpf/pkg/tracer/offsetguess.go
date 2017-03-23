@@ -3,8 +3,11 @@
 package tracer
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
@@ -24,6 +27,21 @@ import (
 import "C"
 
 type tcpTracerStatus C.struct_tcptracer_status_t
+
+func (status *tcpTracerStatus) String() string {
+	return fmt.Sprintf("state=%q pid=%v what=%q offset=[%v %v %v %v %v %v %v %v] err=%v",
+		stateString[status.state], status.pid_tgid, whatString[status.what],
+		status.offset_saddr,
+		status.offset_daddr,
+		status.offset_sport,
+		status.offset_dport,
+		status.offset_netns,
+		status.offset_ino,
+		status.offset_family,
+		status.offset_daddr_ipv6,
+		status.err,
+	)
+}
 
 const (
 	// When reading kernel structs at different offsets, don't go over that
@@ -376,7 +394,21 @@ func guess(b *elf.Module) error {
 		family: syscall.AF_INET,
 	}
 
+	const kprobeProfile = "/sys/kernel/debug/tracing/kprobe_profile"
 	for status.state != stateReady {
+		fmt.Printf("%v\n", whatString[status.what])
+		buf, err := ioutil.ReadFile(kprobeProfile)
+		if err != nil {
+			return err
+		}
+		scanner := bufio.NewScanner(bytes.NewReader(buf))
+		for scanner.Scan() {
+			text := scanner.Text()
+			text = strings.Trim(text, " ")
+			if strings.HasPrefix(text, "rtcp_v4_connect") {
+				fmt.Printf("%s\n", text)
+			}
+		}
 		if err := tryCurrentOffset(b, mp, status, expected, stop); err != nil {
 			return err
 		}
@@ -395,6 +427,7 @@ func guess(b *elf.Module) error {
 			return fmt.Errorf("overflow while guessing %v, bailing out", whatString[status.what])
 		}
 	}
+	fmt.Printf("%v\n", stateString[status.state])
 
 	return nil
 }
