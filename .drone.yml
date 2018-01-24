@@ -1,0 +1,31 @@
+pipeline:
+  build:
+    image: ubuntu
+    commands:
+      - sh -c 'echo Disabling build. We will reuse pre-built image.'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  start-k8s-cluster:
+    group: k8s-setup
+    network_mode: host
+    image: albanc/drone-plugin-kube-spawn
+    addr: "localhost:50051"
+    setup: up
+  get-kubectl:
+    group: k8s-setup
+    image: busybox
+    commands:
+      - sh -c 'wget https://storage.googleapis.com/kubernetes-release/release/v1.9.2/bin/linux/amd64/kubectl -O kubectl && chmod 0755 kubectl'
+  test-k8s-cluster:
+    image: busybox
+    commands:
+      - sh -c 'set -ex; while true; do notready=$(./kubectl --kubeconfig ./kubeconfig get nodes | grep NotReady || true); if [ -n "$notready" ] ; then echo "not ready yet"; sleep 3; else ./kubectl --kubeconfig ./kubeconfig get nodes; break; fi; done'
+      - sh -c './kubectl --kubeconfig ./kubeconfig get nodes'
+      - sh -c './kubectl --kubeconfig ./kubeconfig apply -f "https://cloud.weave.works/k8s/scope.yaml"'
+  stop-k8s-cluster:
+    network_mode: host
+    image: albanc/drone-plugin-kube-spawn
+    addr: "localhost:50051"
+    setup: destroy
+    when:
+      status: [ failure, killed, success ]
